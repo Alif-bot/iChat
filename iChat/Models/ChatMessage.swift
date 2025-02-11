@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ChatMessage: Identifiable, Codable {
+struct ChatMessage: Identifiable, Codable, Equatable {
     var id: UUID = UUID()  // Default value for id
     let from: String?
     let to: String?

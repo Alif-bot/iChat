@@ -46,6 +46,14 @@ class WebSocketManager: ObservableObject {
         
         if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
            let jsonString = String(data: jsonData, encoding: .utf8) {
+            
+            // Append message locally before sending
+            let sentMessage = ChatMessage(from: currentUser, to: recipient, message: message)
+            DispatchQueue.main.async {
+                self.messages.append(sentMessage)
+            }
+
+            // Send to WebSocket
             webSocketTask?.send(.string(jsonString)) { error in
                 if let error = error {
                     print("Error sending message: \(error)")

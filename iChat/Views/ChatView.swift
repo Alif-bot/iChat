@@ -16,46 +16,51 @@ struct ChatView: View {
         VStack {
             Text("Logged in as: \(webSocketManager.currentUser)")
                 .font(.headline)
-            
+                .padding(.top)
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(webSocketManager.messages) { message in
-                        VStack(alignment: .leading) {
-                            Text("\(message.from ?? "Unknown") → \(message.to ?? "Unknown")")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Text(message.message ?? "")
-                                .padding()
-                                .background(Color.blue.opacity(0.2))
-                                .cornerRadius(10)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                ScrollViewReader { scrollView in
+                    VStack(spacing: 10) {
+                        ForEach(webSocketManager.messages) { message in
+                            ChatMessageView(message: message, currentUser: webSocketManager.currentUser)
+                                .id(message.id) // Auto-scroll support
+                        }
+                    }
+                    .padding()
+                    .onChange(of: webSocketManager.messages) { _ in
+                        if let lastMessage = webSocketManager.messages.last {
+                            withAnimation {
+                                scrollView.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
                         }
                     }
                 }
-                .padding()
             }
-            
+
             HStack {
-                TextField("Recipient username", text: $recipientUsername)
+                TextField("Recipient", text: $recipientUsername)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 150)
-                
+                    .frame(width: 120)
+
                 TextField("Enter message...", text: $messageText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Button(action: {
-                    guard !recipientUsername.isEmpty, !messageText.isEmpty else { return }
-                    webSocketManager.sendMessage(to: recipientUsername, message: messageText)
-                    messageText = ""
-                }) {
-                    Text("Send")
+
+                Button(action: sendMessage) {
+                    Image(systemName: "paperplane.fill")
+                        .foregroundColor(.white)
                         .padding()
                         .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+                        .clipShape(Circle())
                 }
+                .disabled(recipientUsername.isEmpty || messageText.isEmpty)
             }
             .padding()
         }
     }
+
+    private func sendMessage() {
+        webSocketManager.sendMessage(to: recipientUsername, message: messageText)
+        messageText = ""
+    }
 }
+
