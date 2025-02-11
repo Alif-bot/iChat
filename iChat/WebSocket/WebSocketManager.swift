@@ -14,6 +14,7 @@ class WebSocketManager: ObservableObject {
 
     init(username: String) {
         self.currentUser = username
+        loadChatHistory() // Load previous messages when user registers
         connect()
     }
 
@@ -69,13 +70,10 @@ class WebSocketManager: ObservableObject {
                 DispatchQueue.main.async {
                     switch message {
                     case .string(let text):
-                        if let data = text.data(using: .utf8) {
-                            do {
-                                let receivedMessage = try JSONDecoder().decode(ChatMessage.self, from: data)
-                                self?.messages.append(receivedMessage)
-                            } catch {
-                                print("Decoding error: \(error), raw data: \(text)")
-                            }
+                        if let data = text.data(using: .utf8),
+                           let receivedMessage = try? JSONDecoder().decode(ChatMessage.self, from: data) {
+                            self?.messages.append(receivedMessage)
+                            self?.saveChatHistory() // Save received messages
                         }
                     default:
                         break
@@ -99,5 +97,19 @@ class WebSocketManager: ObservableObject {
 
     func disconnect() {
         webSocketTask?.cancel()
+    }
+
+    // MARK: - Save & Load Chat History
+    private func saveChatHistory() {
+        if let data = try? JSONEncoder().encode(messages) {
+            UserDefaults.standard.set(data, forKey: "chatHistory_\(currentUser)")
+        }
+    }
+
+    private func loadChatHistory() {
+        if let data = UserDefaults.standard.data(forKey: "chatHistory_\(currentUser)"),
+           let savedMessages = try? JSONDecoder().decode([ChatMessage].self, from: data) {
+            self.messages = savedMessages
+        }
     }
 }
