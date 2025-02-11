@@ -1,5 +1,5 @@
 {
-  "name": "websocket-chat-server",
+  "name": "ichat-websocket-server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

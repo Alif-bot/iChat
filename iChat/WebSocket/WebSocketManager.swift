@@ -24,8 +24,9 @@ class WebSocketManager: ObservableObject {
         
         // Register user after connection
         let registerData: [String: String] = ["type": "register", "username": currentUser]
-        if let jsonData = try? JSONSerialization.data(withJSONObject: registerData) {
-            webSocketTask?.send(.data(jsonData)) { error in
+        if let jsonData = try? JSONSerialization.data(withJSONObject: registerData),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            webSocketTask?.send(.string(jsonString)) { error in
                 if let error = error {
                     print("Error registering user: \(error)")
                 }
@@ -43,8 +44,9 @@ class WebSocketManager: ObservableObject {
             "message": message
         ]
         
-        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData) {
-            webSocketTask?.send(.data(jsonData)) { error in
+        if let jsonData = try? JSONSerialization.data(withJSONObject: messageData),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            webSocketTask?.send(.string(jsonString)) { error in
                 if let error = error {
                     print("Error sending message: \(error)")
                 }
@@ -59,18 +61,31 @@ class WebSocketManager: ObservableObject {
                 DispatchQueue.main.async {
                     switch message {
                     case .string(let text):
-                        if let data = text.data(using: .utf8),
-                           let receivedMessage = try? JSONDecoder().decode(ChatMessage.self, from: data) {
-                            self?.messages.append(receivedMessage)
+                        if let data = text.data(using: .utf8) {
+                            do {
+                                let receivedMessage = try JSONDecoder().decode(ChatMessage.self, from: data)
+                                self?.messages.append(receivedMessage)
+                            } catch {
+                                print("Decoding error: \(error), raw data: \(text)")
+                            }
                         }
                     default:
                         break
                     }
                 }
-                self?.receiveMessage() // Keep listening for messages
+                self?.receiveMessage() // 👈 Keep listening for messages
+                
             case .failure(let error):
                 print("Error receiving message: \(error)")
+                self?.reconnect() // 👈 Try reconnecting
             }
+        }
+    }
+
+    func reconnect() {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 3) { [weak self] in
+            print("Reconnecting...")
+            self?.connect()
         }
     }
 
