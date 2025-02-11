@@ -7,13 +7,6 @@
 
 import Foundation
 
-struct ChatMessage: Identifiable, Codable {
-    let id = UUID()
-    let from: String?
-    let to: String?
-    let message: String?
-}
-
 class WebSocketManager: ObservableObject {
     private var webSocketTask: URLSessionWebSocketTask?
     @Published var messages: [ChatMessage] = []
