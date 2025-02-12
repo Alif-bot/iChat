@@ -1,9 +1,15 @@
 const WebSocket = require("ws");
+const http = require("http");
 
-const server = new WebSocket.Server({ port: 8080 });
+const PORT = process.env.PORT || 8080;
+
+// Create an HTTP server (required for Railway)
+const server = http.createServer();
+const wss = new WebSocket.Server({ server });
+
 let clients = {};  // Store connected clients
 
-server.on("connection", (ws) => {  
+wss.on("connection", (ws) => {  
     console.log("New client connected!");
 
     ws.on("message", (message) => {
@@ -38,5 +44,9 @@ server.on("connection", (ws) => {
     });
 });
 
-console.log("WebSocket server running on ws://localhost:8080");
+// Start the server
+server.listen(PORT, () => {
+    console.log(`WebSocket server running on ws://localhost:${PORT}`);
+});
+
 
