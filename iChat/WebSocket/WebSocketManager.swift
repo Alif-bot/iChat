@@ -19,7 +19,7 @@ class WebSocketManager: ObservableObject {
     }
 
     func connect() {
-        guard let url = URL(string: "ws://localhost:8080") else { return }
+        guard let url = URL(string: "wss://ichat-production-5740.up.railway.app") else { return }
         webSocketTask = URLSession.shared.webSocketTask(with: url)
         webSocketTask?.resume()
         
